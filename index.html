@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Bot Inmobiliario — Evolvance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111b21;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      gap: 14px;
+    }
+
+    /* ── Setup screen ── */
+    #setup-screen {
+      width: 390px;
+      max-width: 100%;
+      background: #202c33;
+      border-radius: 16px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #setup-screen.hidden { display: none; }
+
+    .setup-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 4px;
+    }
+    .setup-logo .av { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#d4a843,#a07828); display:flex;align-items:center;justify-content:center;font-size:22px; }
+    .setup-title { color: #e9edef; font-size: 18px; font-weight: 700; }
+    .setup-sub { color: #8696a0; font-size: 13px; }
+
+    .setup-label { color: #8696a0; font-size: 12px; text-transform: uppercase; letter-spacing:.5px; margin-bottom: 4px; }
+    .setup-input {
+      width: 100%;
+      background: #2a3942;
+      border: 1px solid #3a4a54;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #e9edef;
+      font-size: 14px;
+      outline: none;
+      transition: border .2s;
+    }
+    .setup-input:focus { border-color: #00a884; }
+    .setup-input::placeholder { color: #556b78; }
+
+    .start-btn {
+      background: #00a884;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: 4px;
+    }
+    .start-btn:hover { background: #00c49a; }
+
+    .setup-hint {
+      color: #556b78;
+      font-size: 11.5px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .setup-hint a { color: #00a884; text-decoration: none; }
+
+    /* ── Phone wrapper ── */
+    #phone-wrapper {
+      width: 390px;
+      max-width: 100%;
+      background: #0b141a;
+      border-radius: 48px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 2px #2a2a2a;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 820px;
+    }
+    #phone-wrapper.hidden { display: none; }
+
+    .notch { background: #0b141a; height: 32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .notch-pill { width: 120px; height: 10px; background: #1a1a1a; border-radius: 99px; }
+
+    .wa-header { background: #202c33; padding: 10px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; border-bottom: 1px solid #2a3942; }
+    .wa-back { color: #aebac1; font-size: 22px; cursor:pointer; line-height:1; }
+    .wa-avatar { width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#25d366,#128c7e);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:white;font-weight:700; }
+    .wa-info { flex:1;min-width:0; }
+    .wa-name { color:#e9edef;font-size:16px;font-weight:600; }
+    .wa-status { color:#8696a0;font-size:12px; }
+    .wa-icons { display:flex;gap:20px;color:#aebac1;font-size:20px; }
+
+    .chat-bg { flex:1;overflow-y:auto;padding:12px 10px 8px;background-color:#0b141a;scroll-behavior:smooth; }
+    .chat-bg::-webkit-scrollbar { width:4px; }
+    .chat-bg::-webkit-scrollbar-thumb { background:#2a3942;border-radius:4px; }
+
+    .date-badge { text-align:center;margin:8px 0 12px; }
+    .date-badge span { background:#182229;color:#8696a0;font-size:11.5px;padding:4px 10px;border-radius:8px; }
+
+    .msg-row { display:flex;margin-bottom:3px;animation:fadeIn .18s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1} }
+    .msg-row.out { justify-content:flex-end; }
+    .msg-row.in  { justify-content:flex-start; }
+
+    .bubble { max-width:78%;padding:6px 10px 18px;border-radius:8px;font-size:14.2px;line-height:1.45;position:relative;word-break:break-word; }
+    .bubble.out { background:#005c4b;color:#e9edef;border-bottom-right-radius:2px; }
+    .bubble.in  { background:#202c33;color:#e9edef;border-bottom-left-radius:2px; }
+    .bubble.out::after { content:'';position:absolute;bottom:0;right:-8px;border:8px solid transparent;border-bottom-color:#005c4b;border-right:none; }
+    .bubble.in::after  { content:'';position:absolute;bottom:0;left:-8px;border:8px solid transparent;border-bottom-color:#202c33;border-left:none; }
+    .bubble-time { position:absolute;bottom:4px;right:8px;font-size:10.5px;color:#8696a0;white-space:nowrap; }
+    .bubble.out .bubble-time { right:28px; }
+    .bubble-ticks { font-size:12px;position:absolute;bottom:4px;right:7px;color:#53bdeb; }
+
+    .typing-bubble { background:#202c33;border-radius:8px;border-bottom-left-radius:2px;padding:10px 14px;display:inline-flex;align-items:center;gap:4px; }
+    .dot { width:7px;height:7px;background:#8696a0;border-radius:50%;animation:bounce 1.3s infinite; }
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+    .qualified-banner { background:linear-gradient(135deg,#25d366,#128c7e);color:white;text-align:center;padding:10px 14px;font-size:13px;font-weight:600;border-radius:10px;margin:8px 4px;animation:fadeIn .3s ease; }
+
+    .input-bar { background:#202c33;padding:8px 10px;display:flex;align-items:flex-end;gap:8px;flex-shrink:0;border-top:1px solid #2a3942; }
+    .emoji-btn { color:#8696a0;font-size:22px;cursor:pointer;line-height:1;flex-shrink:0;padding:6px 2px; }
+    .text-input { flex:1;background:#2a3942;border:none;outline:none;border-radius:20px;padding:9px 14px;color:#e9edef;font-size:15px;resize:none;max-height:120px;line-height:1.4;font-family:inherit; }
+    .text-input::placeholder { color:#8696a0; }
+    .send-btn { width:44px;height:44px;border-radius:50%;background:#00a884;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s; }
+    .send-btn:hover { background:#00c49a; }
+    .send-btn:disabled { background:#2a3942;cursor:default; }
+    .send-btn svg { fill:white;width:20px;height:20px; }
+
+    .home-bar { height:26px;display:flex;align-items:center;justify-content:center;background:#0b141a;flex-shrink:0; }
+    .home-pill { width:130px;height:5px;background:#2a2a2a;border-radius:99px; }
+
+    #reset-btn { background:#005c4b;color:white;border:none;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;opacity:.7;transition:opacity .2s; }
+    #reset-btn:hover { opacity:1; }
+    .demo-label { color:#8696a0;font-size:11px;letter-spacing:.5px;text-transform:uppercase; }
+  </style>
+</head>
+<body>
+
+<!-- ── Pantalla de configuración ── -->
+<div id="setup-screen">
+  <div class="setup-logo">
+    <div class="av">🏠</div>
+    <div>
+      <div class="setup-title">Bot Inmobiliario IA</div>
+      <div class="setup-sub">Demo — Evolvance</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="setup-label">Groq API Key</div>
+    <input
+      class="setup-input"
+      type="password"
+      id="api-key-input"
+      placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"
+      autocomplete="off"
+    />
+  </div>
+
+  <div>
+    <div class="setup-label">Nombre del bot</div>
+    <input class="setup-input" type="text" id="bot-name-input" value="Laura" />
+  </div>
+
+  <div>
+    <div class="setup-label">Nombre de la inmobiliaria</div>
+    <input class="setup-input" type="text" id="business-input" value="Evolvance Inmobiliaria" />
+  </div>
+
+  <!-- Aviso CORS si se abre como file:// -->
+  <div id="cors-warning" style="display:none; background:#2d1f1f; border:1px solid #7f3333; border-radius:10px; padding:14px 16px; font-size:13px; color:#f87171; line-height:1.6;">
+    <strong>⚠ Abre el archivo desde un servidor local</strong><br/>
+    El navegador bloquea las llamadas a la API cuando el archivo se abre directamente.<br/><br/>
+    <strong style="color:#e9edef;">Solución rápida — abre una terminal en la carpeta del archivo y ejecuta:</strong><br/>
+    <code style="display:block; background:#111; padding:8px 12px; border-radius:6px; margin-top:6px; color:#4ade80; font-size:13px;">python3 -m http.server 8080</code>
+    Luego abre en el navegador:<br/>
+    <code style="display:block; background:#111; padding:8px 12px; border-radius:6px; margin-top:4px; color:#60a5fa; font-size:13px;">http://localhost:8080/bot-demo-inmobiliaria.html</code>
+  </div>
+
+  <button class="start-btn" onclick="startChat()">Iniciar Demo →</button>
+
+  <p class="setup-hint">
+    Consigue tu API Key gratuita en
+    <a href="https://console.groq.com" target="_blank">console.groq.com</a><br/>
+    La key solo se usa en tu navegador y no se almacena en ningún servidor.
+  </p>
+</div>
+
+<!-- ── Interfaz WhatsApp ── -->
+<div id="phone-wrapper" class="hidden">
+  <div class="notch"><div class="notch-pill"></div></div>
+  <div class="wa-header">
+    <span class="wa-back" onclick="backToSetup()">‹</span>
+    <div class="wa-avatar" id="bot-avatar">L</div>
+    <div class="wa-info">
+      <div class="wa-name" id="bot-header-name">Laura · Evolvance</div>
+      <div class="wa-status" id="status-text">en línea</div>
+    </div>
+    <div class="wa-icons"><span>📞</span><span>⋮</span></div>
+  </div>
+  <div class="chat-bg" id="chat">
+    <div class="date-badge"><span>Hoy</span></div>
+  </div>
+  <div class="input-bar">
+    <span class="emoji-btn">🙂</span>
+    <textarea class="text-input" id="user-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+    <span class="emoji-btn">📎</span>
+    <button class="send-btn" id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="home-bar"><div class="home-pill"></div></div>
+</div>
+
+<span class="demo-label" id="demo-label" style="display:none">Demo — Bot Inmobiliario IA</span>
+<button id="reset-btn" style="display:none" onclick="resetChat()">↺ Nueva conversación</button>
+
+<script>
+  const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  const MODEL = 'llama-3.3-70b-versatile';
+
+  let apiKey = '';
+  let botName = 'Laura';
+  let businessName = 'Evolvance Inmobiliaria';
+  let messages = [];
+  let isTyping = false;
+
+  function getSystemPrompt() {
+    return `Eres ${botName}, asesora inmobiliaria de ${businessName}.
+Hablas por WhatsApp con personas interesadas en comprar o alquilar un inmueble.
+
+## TU PERSONALIDAD
+- Eres cercana, amable y profesional pero NO robótica ni formal en exceso
+- Usas un tono conversacional natural, como hablaría una persona real por WhatsApp
+- Puedes usar expresiones coloquiales: "genial", "perfecto", "entiendo", "mira", "claro"
+- Escribe mensajes CORTOS (1-3 frases máximo)
+- No uses bullet points ni listas, solo texto conversacional
+- A veces puedes ser empática: "entiendo que buscar piso es estresante"
+- NUNCA suenes como un chatbot ni uses frases corporativas
+- Usa emojis con moderación (máximo 1 por mensaje, y no siempre)
+
+## TU OBJETIVO
+A través de la conversación natural, descubrir:
+1. Si quiere comprar o alquilar
+2. Qué tipo de inmueble busca (piso, casa, local, garaje...)
+3. Zona o ciudad preferida
+4. Presupuesto aproximado
+5. Urgencia o plazo
+
+## REGLAS
+- Haz UNA pregunta a la vez, nunca varias seguidas
+- Si la persona da info voluntariamente, no la repitas preguntando de nuevo
+- Adapta tu tono al de la persona
+- Si alguien pregunta precios concretos, di que depende de muchos factores y que puedes pasarle con un especialista
+- No inventes propiedades específicas, tu rol es cualificar y conectar con el equipo
+
+## CUALIFICACIÓN
+Cuando tengas suficiente información (intención clara + al menos zona O presupuesto), di algo como:
+"Oye, mira, creo que tenemos opciones que te pueden encajar. Te paso con Carlos, que es especialista en esa zona y te puede enseñar pisos directamente. ¿Cuándo te viene mejor, por la mañana o por la tarde?"
+
+Al llegar a ese punto añade esta etiqueta al final (en nueva línea): [LEAD_CUALIFICADO]
+
+## PRIMER MENSAJE
+Saluda de forma natural y pregunta en qué puedes ayudar.`;
+  }
+
+  // ── Iniciar chat ──────────────────────────────────────────
+  async function startChat() {
+    apiKey = document.getElementById('api-key-input').value.trim();
+    botName = document.getElementById('bot-name-input').value.trim() || 'Laura';
+    businessName = document.getElementById('business-input').value.trim() || 'Evolvance';
+
+    if (!apiKey || !apiKey.startsWith('gsk_')) {
+      document.getElementById('api-key-input').style.borderColor = '#ef4444';
+      document.getElementById('api-key-input').placeholder = '⚠ Introduce una key válida (gsk_...)';
+      return;
+    }
+
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('phone-wrapper').classList.remove('hidden');
+    document.getElementById('demo-label').style.display = 'block';
+    document.getElementById('reset-btn').style.display = 'block';
+
+    document.getElementById('bot-avatar').textContent = botName[0].toUpperCase();
+    document.getElementById('bot-header-name').textContent = `${botName} · ${businessName}`;
+
+    messages = [];
+    await getBotResponse('__START__');
+  }
+
+  function backToSetup() {
+    document.getElementById('phone-wrapper').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+    document.getElementById('demo-label').style.display = 'none';
+    document.getElementById('reset-btn').style.display = 'none';
+  }
+
+  // ── Enviar mensaje ──────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text || isTyping) return;
+    input.value = '';
+    input.style.height = 'auto';
+    appendMessage(text, 'out');
+    messages.push({ role: 'user', content: text });
+    await getBotResponse(text);
+  }
+
+  // ── Llamada a Groq ──────────────────────────────────────────
+  async function getBotResponse(trigger) {
+    isTyping = true;
+    setStatus('escribiendo…');
+    document.getElementById('send-btn').disabled = true;
+
+    const isStart = trigger === '__START__';
+    const promptMessages = isStart
+      ? [{ role: 'user', content: 'Empieza la conversación saludando al cliente.' }]
+      : messages;
+
+    const typingEl = showTyping();
+
+    try {
+      const res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 280,
+          messages: [
+            { role: 'system', content: getSystemPrompt() },
+            ...promptMessages,
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || `Error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const botText = data.choices[0].message.content;
+      const qualified = botText.includes('[LEAD_CUALIFICADO]');
+      const cleanText = botText.replace('[LEAD_CUALIFICADO]', '').trim();
+
+      messages.push({ role: 'assistant', content: botText });
+
+      // Delay natural de escritura
+      const delay = Math.min(cleanText.length * 25 + 700, 3200);
+      await sleep(delay);
+
+      removeTyping(typingEl);
+      appendMessage(cleanText, 'in');
+
+      if (qualified) showQualifiedBanner();
+      setStatus('en línea');
+
+    } catch (err) {
+      removeTyping(typingEl);
+      appendMessage(`⚠ Error: ${err.message}`, 'in');
+      setStatus('error');
+    } finally {
+      isTyping = false;
+      document.getElementById('send-btn').disabled = false;
+    }
+  }
+
+  // ── UI helpers ──────────────────────────────────────────────
+  function appendMessage(text, dir) {
+    const chat = document.getElementById('chat');
+    const row = document.createElement('div');
+    row.className = `msg-row ${dir}`;
+    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${dir}`;
+    bubble.innerHTML = `${escapeHtml(text)}<span class="bubble-time">${time}</span>`;
+    if (dir === 'out') bubble.innerHTML += `<span class="bubble-ticks">✓✓</span>`;
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showTyping() {
+    const chat = document.getElementById('chat');
+    const row = document.createElement('div');
+    row.className = 'msg-row in';
+    row.innerHTML = `<div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+    return row;
+  }
+  function removeTyping(el) { if (el?.parentNode) el.parentNode.removeChild(el); }
+
+  function showQualifiedBanner() {
+    const chat = document.getElementById('chat');
+    const b = document.createElement('div');
+    b.className = 'qualified-banner';
+    b.innerHTML = '✅ Lead cualificado — el equipo comercial ha sido notificado';
+    chat.appendChild(b);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function setStatus(t) { document.getElementById('status-text').textContent = t; }
+
+  async function resetChat() {
+    document.getElementById('chat').innerHTML = '<div class="date-badge"><span>Hoy</span></div>';
+    messages = [];
+    await getBotResponse('__START__');
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function escapeHtml(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  // Enter para enviar, Shift+Enter para salto de línea
+  const inp = document.getElementById('user-input');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  inp.addEventListener('input', () => {
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+  });
+
+  // Pre-rellenar key si viene en el hash de la URL (opcional)
+  const hashKey = location.hash.replace('#', '');
+  if (hashKey.startsWith('gsk_')) {
+    document.getElementById('api-key-input').value = hashKey;
+    history.replaceState(null, '', location.pathname);
+  }
+
+  // Detectar si se abre como file:// y mostrar aviso CORS
+  if (location.protocol === 'file:') {
+    document.getElementById('cors-warning').style.display = 'block';
+  }
+</script>
+</body>
+</html>
