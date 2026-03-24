@@ -145,6 +145,22 @@
     #reset-btn { background:#005c4b;color:white;border:none;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;opacity:.7;transition:opacity .2s; }
     #reset-btn:hover { opacity:1; }
     .demo-label { color:#8696a0;font-size:11px;letter-spacing:.5px;text-transform:uppercase; }
+
+    /* Panel lateral de datos */
+    #data-panel { position:fixed;right:0;top:0;width:320px;height:100vh;background:#1a2332;border-left:1px solid #2a3942;display:none;flex-direction:column;z-index:100;animation:slideIn .3s ease; }
+    @keyframes slideIn { from{transform:translateX(100%)}to{transform:translateX(0)} }
+    #data-panel.show { display:flex; }
+    .panel-header { background:#202c33;padding:16px;border-bottom:1px solid #2a3942; }
+    .panel-header-title { color:#e9edef;font-size:16px;font-weight:600;margin-bottom:4px; }
+    .panel-header-sub { color:#8696a0;font-size:12px; }
+    .panel-content { flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px; }
+    .data-group { }
+    .data-label { color:#8696a0;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px; }
+    .data-value { color:#e9edef;font-size:14px;padding:10px 12px;background:#0b141a;border-radius:6px;border-left:3px solid #00a884; }
+    .data-value.empty { color:#556b78;font-style:italic; }
+    .panel-footer { padding:14px 16px;border-top:1px solid #2a3942;background:#202c33; }
+    .send-to-advisor { background:#00a884;color:white;width:100%;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s; }
+    .send-to-advisor:hover { background:#00c49a; }
   </style>
 </head>
 <body>
@@ -225,6 +241,20 @@
   <div class="home-bar"><div class="home-pill"></div></div>
 </div>
 
+<!-- Panel lateral con datos del lead -->
+<div id="data-panel">
+  <div class="panel-header">
+    <div class="panel-header-title">📋 Lead Cualificado</div>
+    <div class="panel-header-sub">Información enviada a Carlos</div>
+  </div>
+  <div class="panel-content" id="panel-content">
+    <!-- Se rellenará dinámicamente -->
+  </div>
+  <div class="panel-footer">
+    <button class="send-to-advisor">✓ Enviado a Carlos</button>
+  </div>
+</div>
+
 <span class="demo-label" id="demo-label" style="display:none">Demo — Bot Inmobiliario IA</span>
 <button id="reset-btn" style="display:none" onclick="resetChat()">↺ Nueva conversación</button>
 
@@ -237,6 +267,14 @@
   let businessName = 'Evolvance Inmobiliaria';
   let messages = [];
   let isTyping = false;
+  let leadData = {
+    intension: null,
+    tipo_inmueble: null,
+    zona: null,
+    presupuesto: null,
+    habitaciones: null,
+    urgencia: null,
+  };
 
   function getSystemPrompt() {
     return `Eres ${botName}, asesora inmobiliaria de ${businessName}.
@@ -404,6 +442,12 @@ Saluda de forma natural y cercana. Pregunta solo en qué puedes ayudar, nada má
         }
       }
 
+      // Si está cualificado, extraer datos y mostrar panel
+      if (qualified) {
+        extractLeadData();
+        showDataPanel();
+      }
+
       setStatus('en línea');
 
     } catch (err) {
@@ -444,9 +488,89 @@ Saluda de forma natural y cercana. Pregunta solo en qué puedes ayudar, nada má
 
 function setStatus(t) { document.getElementById('status-text').textContent = t; }
 
+  // Extraer datos del historial de conversación
+  function extractLeadData() {
+    const fullConversation = messages.map(m => m.content.toLowerCase()).join(' ');
+
+    // Intención
+    if (fullConversation.includes('comprar')) leadData.intension = 'Compra';
+    else if (fullConversation.includes('alquilar')) leadData.intension = 'Alquiler';
+    else if (fullConversation.includes('vender')) leadData.intension = 'Venta';
+
+    // Tipo de inmueble
+    const tipos = ['piso', 'casa', 'chalet', 'local', 'oficina', 'terreno', 'garaje'];
+    for (let tipo of tipos) {
+      if (fullConversation.includes(tipo)) {
+        leadData.tipo_inmueble = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+        break;
+      }
+    }
+
+    // Zona (palabras clave de ciudades)
+    const ciudades = ['sevilla', 'madrid', 'barcelona', 'valencia', 'málaga', 'córdoba', 'cádiz', 'huelva'];
+    for (let ciudad of ciudades) {
+      if (fullConversation.includes(ciudad)) {
+        leadData.zona = ciudad.charAt(0).toUpperCase() + ciudad.slice(1);
+        break;
+      }
+    }
+
+    // Presupuesto (buscar números de 3+ dígitos)
+    const numberMatch = fullConversation.match(/(\d{3,}\.?\d*)/);
+    if (numberMatch) {
+      leadData.presupuesto = '€ ' + numberMatch[1];
+    }
+
+    // Habitaciones
+    const habMatch = fullConversation.match(/(\d)\s*(?:habitaciones?|dormitorios?|hab)/);
+    if (habMatch) {
+      leadData.habitaciones = habMatch[1] + ' hab.';
+    }
+
+    // Urgencia
+    if (fullConversation.includes('pronto') || fullConversation.includes('urgencia') || fullConversation.includes('ya')) {
+      leadData.urgencia = 'Inmediata';
+    } else if (fullConversation.includes('próxima') || fullConversation.includes('próximos')) {
+      leadData.urgencia = 'Próximas semanas';
+    }
+  }
+
+  // Mostrar panel de datos
+  function showDataPanel() {
+    const panel = document.getElementById('data-panel');
+    const content = document.getElementById('panel-content');
+
+    content.innerHTML = '';
+
+    const fields = [
+      { label: 'Intención', key: 'intension' },
+      { label: 'Tipo de inmueble', key: 'tipo_inmueble' },
+      { label: 'Zona', key: 'zona' },
+      { label: 'Presupuesto', key: 'presupuesto' },
+      { label: 'Habitaciones', key: 'habitaciones' },
+      { label: 'Urgencia', key: 'urgencia' },
+    ];
+
+    fields.forEach(field => {
+      const value = leadData[field.key] || 'No especificado';
+      const html = `
+        <div class="data-group">
+          <div class="data-label">${field.label}</div>
+          <div class="data-value ${!leadData[field.key] ? 'empty' : ''}">${value}</div>
+        </div>
+      `;
+      content.innerHTML += html;
+    });
+
+    // Mostrar panel
+    panel.classList.add('show');
+  }
+
   async function resetChat() {
     document.getElementById('chat').innerHTML = '<div class="date-badge"><span>Hoy</span></div>';
+    document.getElementById('data-panel').classList.remove('show');
     messages = [];
+    leadData = { intension: null, tipo_inmueble: null, zona: null, presupuesto: null, habitaciones: null, urgencia: null };
     await getBotResponse('__START__');
   }
 
