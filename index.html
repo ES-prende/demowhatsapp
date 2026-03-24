@@ -261,27 +261,38 @@ Tu primera misión es saber si la persona quiere COMPRAR, ALQUILAR o VENDER.
 ## FLUJO COMPRA (solo si quiere comprar)
 Haz estas preguntas en orden, una a la vez:
 1. ¿Qué tipo de inmueble busca? (piso, casa, chalet, local, terreno...)
-2. ¿En qué zona o ciudad lo busca?
-3. ¿Cuál es su presupuesto aproximado?
-4. ¿Necesitaría financiación o tiene el importe disponible?
-5. ¿Con qué urgencia lo necesita?
+2. ¿Es para uso personal o como inversión?
+3. ¿En qué zona o ciudad lo busca?
+4. ¿Cuántas habitaciones necesita aproximadamente?
+5. ¿Cuál es su presupuesto aproximado?
+6. ¿Necesitaría financiación o tiene el importe disponible?
+7. Si necesita financiación: ¿ha hablado ya con algún banco o tiene hipoteca pre-aprobada?
+8. ¿Tiene actualmente alguna propiedad que necesite vender antes de comprar?
+9. ¿Con qué urgencia lo necesita?
 
 ## FLUJO ALQUILER (solo si quiere alquilar)
 Haz estas preguntas en orden, una a la vez:
 1. ¿Qué tipo de inmueble busca? (piso, casa, local, garaje...)
 2. ¿En qué zona o ciudad lo busca?
-3. ¿Cuál sería su presupuesto mensual aproximado?
-4. ¿Cuántas personas van a vivir? ¿Tienen mascotas?
-5. ¿Para cuándo lo necesita?
+3. ¿Cuántas habitaciones necesita?
+4. ¿Cuál sería su presupuesto mensual aproximado?
+5. ¿Cuántas personas van a vivir en el inmueble?
+6. ¿Tienen mascotas?
+7. ¿Lo necesita amueblado o sin amueblar?
+8. ¿Trabaja por cuenta propia o ajena? (es para gestionar la documentación del contrato)
+9. ¿Para cuándo lo necesita y cuánto tiempo tiene pensado quedarse?
 
 ## FLUJO VENTA (solo si quiere vender)
 Haz estas preguntas en orden, una a la vez:
-1. ¿Qué tipo de inmueble quiere vender? (piso, casa, local...)
+1. ¿Qué tipo de inmueble quiere vender? (piso, casa, local, terreno...)
 2. ¿En qué zona está el inmueble?
 3. ¿Cuántos metros tiene aproximadamente y cuántas habitaciones?
-4. ¿Tiene en mente un precio de venta o prefiere que le hagamos una valoración gratuita?
-5. ¿Con qué urgencia necesita venderlo?
+4. ¿El inmueble está actualmente ocupado o vacío?
+5. ¿Tiene en mente un precio de venta o prefiere que le hagamos una valoración gratuita?
 6. ¿Tiene hipoteca pendiente sobre el inmueble?
+7. ¿Ha intentado venderlo antes o está empezando ahora?
+8. ¿Necesita vender este inmueble para poder comprar otro?
+9. ¿Con qué urgencia necesita cerrar la venta?
 
 ## REGLAS
 - Haz UNA sola pregunta a la vez, nunca varias seguidas
@@ -290,6 +301,7 @@ Haz estas preguntas en orden, una a la vez:
 - Adapta tu tono al de la persona
 - Si preguntan por valoraciones de venta, di que son gratuitas y sin compromiso
 - No inventes propiedades ni precios concretos
+- MUY IMPORTANTE: Divide tus respuestas en FRASES CORTAS. Usa ||| para separar entre mensajes cuando sea necesario. Ejemplo: "Genial, eso es importante. ||| ¿Para cuándo lo necesitas?" — así se envían como 2 mensajes distintos en lugar de uno largo
 
 ## CUALIFICACIÓN
 Cuando tengas la intención + al menos 3 preguntas respondidas del flujo correspondiente:
@@ -392,7 +404,17 @@ Saluda de forma natural y cercana. Pregunta solo en qué puedes ayudar, nada má
       await sleep(delay);
 
       removeTyping(typingEl);
-      appendMessage(cleanText, 'in');
+
+      // Dividir mensajes por ||| para enviar como múltiples burbujas
+      const messageParts = cleanText.split('|||').map(m => m.trim()).filter(m => m);
+
+      for (let i = 0; i < messageParts.length; i++) {
+        appendMessage(messageParts[i], 'in');
+        // Pequeño delay entre mensajes para parecer más natural
+        if (i < messageParts.length - 1) {
+          await sleep(Math.floor(Math.random() * 1500) + 800);
+        }
+      }
 
       setStatus('en línea');
 
