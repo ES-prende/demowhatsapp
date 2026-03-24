@@ -259,40 +259,28 @@ Tu primera misión es saber si la persona quiere COMPRAR, ALQUILAR o VENDER.
 - Una vez que sepas la intención, sigue ÚNICAMENTE el flujo correspondiente. No mezcles preguntas de distintos flujos.
 
 ## FLUJO COMPRA (solo si quiere comprar)
-Haz estas preguntas en orden, una a la vez:
-1. ¿Qué tipo de inmueble busca? (piso, casa, chalet, local, terreno...)
-2. ¿Es para uso personal o como inversión?
-3. ¿En qué zona o ciudad lo busca?
-4. ¿Cuántas habitaciones necesita aproximadamente?
-5. ¿Cuál es su presupuesto aproximado?
-6. ¿Necesitaría financiación o tiene el importe disponible?
-7. Si necesita financiación: ¿ha hablado ya con algún banco o tiene hipoteca pre-aprobada?
-8. ¿Tiene actualmente alguna propiedad que necesite vender antes de comprar?
-9. ¿Con qué urgencia lo necesita?
-
-## FLUJO ALQUILER (solo si quiere alquilar)
-Haz estas preguntas en orden, una a la vez:
-1. ¿Qué tipo de inmueble busca? (piso, casa, local, garaje...)
+Haz estas preguntas en orden, UNA A LA VEZ. Solo estas 5:
+1. ¿Qué tipo de inmueble busca? (piso, casa, chalet...)
 2. ¿En qué zona o ciudad lo busca?
 3. ¿Cuántas habitaciones necesita?
-4. ¿Cuál sería su presupuesto mensual aproximado?
-5. ¿Cuántas personas van a vivir en el inmueble?
-6. ¿Tienen mascotas?
-7. ¿Lo necesita amueblado o sin amueblar?
-8. ¿Trabaja por cuenta propia o ajena? (es para gestionar la documentación del contrato)
-9. ¿Para cuándo lo necesita y cuánto tiempo tiene pensado quedarse?
+4. ¿Cuál es su presupuesto aproximado?
+5. ¿Con qué urgencia lo necesita?
+
+## FLUJO ALQUILER (solo si quiere alquilar)
+Haz estas preguntas en orden, UNA A LA VEZ. Solo estas 5:
+1. ¿Qué tipo de inmueble busca? (piso, casa, local...)
+2. ¿En qué zona o ciudad lo busca?
+3. ¿Cuántas habitaciones necesita?
+4. ¿Cuál sería su presupuesto mensual?
+5. ¿Para cuándo lo necesita?
 
 ## FLUJO VENTA (solo si quiere vender)
-Haz estas preguntas en orden, una a la vez:
-1. ¿Qué tipo de inmueble quiere vender? (piso, casa, local, terreno...)
+Haz estas preguntas en orden, UNA A LA VEZ. Solo estas 5:
+1. ¿Qué tipo de inmueble quiere vender?
 2. ¿En qué zona está el inmueble?
-3. ¿Cuántos metros tiene aproximadamente y cuántas habitaciones?
-4. ¿El inmueble está actualmente ocupado o vacío?
-5. ¿Tiene en mente un precio de venta o prefiere que lo tasemos?
-6. ¿Tiene hipoteca pendiente sobre el inmueble?
-7. ¿Ha intentado venderlo antes o está empezando ahora?
-8. ¿Necesita vender este inmueble para poder comprar otro?
-9. ¿Con qué urgencia necesita cerrar la venta?
+3. ¿Cuántos metros tiene aproximadamente?
+4. ¿Tiene en mente un precio o prefiere que lo tasemos?
+5. ¿Con qué urgencia necesita venderlo?
 
 ## REGLAS
 - Haz UNA sola pregunta a la vez, nunca varias seguidas
@@ -305,8 +293,8 @@ Haz estas preguntas en orden, una a la vez:
 
 ## CUALIFICACIÓN
 Cuando tengas la intención + al menos 3 preguntas respondidas del flujo correspondiente:
-- Compra/alquiler: "Mira, creo que tenemos opciones que te pueden encajar. Te paso con Carlos, que es especialista en esa zona. ¿Cuándo te viene mejor, mañana por la mañana o por la tarde?"
-- Venta: "Perfecto, te lo tasamos sin problema. ¿Cuándo te vendría bien que un asesor se pase a verlo?"
+- Compra/alquiler: "Perfecto, tenemos varias opciones que te van a encajar. ||| Carlos, nuestro especialista en esa zona, se pondrá en contacto contigo pronto para mostrarte los inmuebles. ||| ¿Te dejo su número de contacto o prefieres que te llame él directamente?"
+- Venta: "Genial, Carlos se pondrá en contacto contigo en breve para hacer la tasación. ||| Mientras tanto, si tienes alguna duda más, estoy aquí para ayudarte."
 
 Al llegar a ese punto añade al final (en nueva línea): [LEAD_CUALIFICADO]
 
@@ -399,8 +387,8 @@ Saluda de forma natural y cercana. Pregunta solo en qué puedes ayudar, nada má
 
       messages.push({ role: 'assistant', content: botText });
 
-      // Delay humano: entre 10 y 15 segundos aleatorio
-      const delay = Math.floor(Math.random() * 5000) + 10000;
+      // Delay rápido: entre 3 y 6 segundos
+      const delay = Math.floor(Math.random() * 3000) + 3000;
       await sleep(delay);
 
       removeTyping(typingEl);
@@ -477,11 +465,13 @@ function setStatus(t) { document.getElementById('status-text').textContent = t; 
     inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
   });
 
-  // Pre-rellenar key si viene en el hash de la URL (opcional)
+  // Pre-rellenar key si viene en el hash de la URL y auto-iniciar
   const hashKey = location.hash.replace('#', '');
   if (hashKey.startsWith('gsk_')) {
     document.getElementById('api-key-input').value = hashKey;
     history.replaceState(null, '', location.pathname);
+    // Auto-iniciar el chat sin mostrar pantalla de setup
+    setTimeout(() => startChat(), 500);
   }
 
   // Detectar si se abre como file:// y mostrar aviso CORS
