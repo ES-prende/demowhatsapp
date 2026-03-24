@@ -373,7 +373,6 @@ Saluda de forma natural, breve y cercana. Solo pregunta en qué puedes ayudar, n
       removeTyping(typingEl);
       appendMessage(cleanText, 'in');
 
-      if (qualified) showQualifiedBanner();
       setStatus('en línea');
 
     } catch (err) {
@@ -412,16 +411,7 @@ Saluda de forma natural, breve y cercana. Solo pregunta en qué puedes ayudar, n
   }
   function removeTyping(el) { if (el?.parentNode) el.parentNode.removeChild(el); }
 
-  function showQualifiedBanner() {
-    const chat = document.getElementById('chat');
-    const b = document.createElement('div');
-    b.className = 'qualified-banner';
-    b.innerHTML = '✅ Lead cualificado — el equipo comercial ha sido notificado';
-    chat.appendChild(b);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  function setStatus(t) { document.getElementById('status-text').textContent = t; }
+function setStatus(t) { document.getElementById('status-text').textContent = t; }
 
   async function resetChat() {
     document.getElementById('chat').innerHTML = '<div class="date-badge"><span>Hoy</span></div>';
